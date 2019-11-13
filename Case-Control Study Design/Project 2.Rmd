@@ -1,0 +1,360 @@
+---
+title: "Assignment II "
+author: ""
+date: "January 28, 2019"
+output: html_document
+---
+
+> Please submit your answers by 5.59 pm Monday February 4, 2019.  Remember to show your work. In other words, always use echo=TRUE for the R code chunks that you provide. NOTE - All plots must show proper title, axis lables, and any legends used. Points will be deducted otherwise. Submissions must be made in HTML. Problem 6 has an additional submission to be made in DOCX or PDF format. 
+
+##### Initialization
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Use this space to call any libraries here
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(png)
+library(grid)
+
+
+```
+
+##### Section 1: Plotting
+Q1) In Lecture 3, we worked with two datasets: "case_patients.csv" and "control_patients.csv" (under Files -> lectures -> lecture_3). We will use those files again in this question. 
+
+
+a) Plot a box plot of LOS ~ outcome for the whole cohort. You will have to combine case and control into a single dataset with the outcome for this purpose (as shown in the lecture notes). Write down any observations.
+
+Ans. 
+```{r}
+# Insert code below
+d.in1 <- read.csv("control_patients.csv", header = TRUE)
+d.in2 <- read.csv("case_patients.csv", header = TRUE)
+d.in1 <- d.in1 %>%
+  mutate(outcome = rep('0', nrow(d.in1)))
+d.in2 <- d.in2 %>%
+  mutate(outcome = rep('1', nrow(d.in2)))
+d.in <- rbind(d.in1, d.in2)
+d.in$outcome <- as.factor(d.in$outcome)
+
+boxplot(los~outcome, data = d.in, xlab = "outcome", ylab = "los", ylim=c(0,135))
+
+# Observations: The Control_patients boxplot has more outliers in the above maximum. The Case_patients boxplot has a larger range for the third quartile than the Control_patients boxplot. This means the length of stay for Control_patients group is more concentrated around the median LOS.
+```
+
+b) Plot a box plot of LOS ~ gender for the two groups in separate graphs. Write down any observations. 
+
+Ans. 
+```{r}
+# Insert code below
+d.box1 <- boxplot(los~gender, data = d.in1, xlab = "Gender", ylab = "los", ylim=c(0,135))
+```
+```{r}
+d.box2 <- boxplot(los~gender, data = d.in2, xlab = "Gender", ylab = "los", ylim=c(0,125))
+
+#Observations: The Case_patients has a larger range for the third quartile than the Control_patients whether the females or males data sets. The data in Case_patients are more concentrated around the medium and the mean than Control_patients data. The Control_patients data sets have more outliers above the minimum. The first quartile range of Control_patients data is very tiny.
+```
+
+##### Section 2: Odds and odds ratios calculation
+Q2) In a case-cohort study of 2000 patients studying renal disease caused by smoking, a group found the following numbers.   
+1. A total of 300 patients suffered renal disease  
+2. A total of 1000 patients were smokers  
+3. Two-thirds of the patients who suffered renal disease smoked.  
+
+
+(a) Identify the primary exposure and outcome of interest.  
+
+Ans. The primary exposure is smoking (the primary risk factor of renal disease), and the outcome of interest is renal diseases.
+
+(b) Complete the below 2x2 table of exposure (on row) against outcome (on column).  
+
+Ans.
+
+Table        | Has renal diseases  | No renal diseases | Total
+-------------|---------------------|-------------------|----------
+Smoking      |         200         |         800       | 1000 
+Not Smoking  |         100         |         900       | 1000
+Total        |         300         |        1700       | 2000    
+
+(c) Calculate the odds ratio of incidence of renal disease among smokers.
+
+Ans. Odds = P(exposure amoung cases)/(1-P(exposure amoung cases))
+          = (200/1000)/(1-200/1000)
+          = 0.25
+
+Q3) Answer the following:   
+
+(a) Suppose that an individual has a 18% chance of defaulting on their credit card payment. What are the odds that this individual will default?    
+
+Ans. Odds = p/(1-p) = 18% / (1-18%) = 0.2195122
+
+(b) On average, what fraction of people with an odds of 0.4 of defaulting on their credit card payment will actually default?  
+
+Ans. p/(1-p) =0.4
+     p = 0.4-0.4p
+     1.4p = 0.4
+        p =0.2857
+     The fraction will be 0.2857
+
+
+##### Section 3: Study design
+
+Q4) A hospital H noticed that approximately 10% of patients who underwent a particularly surgery (surgery S) also developed infection during their post-surgery recovery period. For surgery S, the post-surgery recovery period is 2 weeks. It is suspected a majority of these patients (about 60%) may have taken a particular antibiotic (ABX) during a 3-month period prior to the surgery. ABX could kill the "good" bacteria in the patients body causing the patient to be prone to infection after the surgery.  
+
+(a) What is the outcome of interest and the exposure of interest in this study?  
+
+Ans.  The outcome of interest is the infection during the patients' post-surgery recovery period. The exposure of interest is taking a particular antibiotic (ABX) during a 3-month period before the surgery.
+
+(b) Design a matched case-control study (matched on age and gender) that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria.
+
+Ans. 
+Eligible Population: Patients who underwent the particular surgery S.
+
+Cases: Patients got infected  during the recovery period 
+
+Control: Patients weren't infected during the recovery period
+
+Questionnaires sent to all patients within 1-2 weeks of the recovery period after the particular surgery S.
+
+Non-respondents phoned after 2 weeks.
+
+
+Table        |Infection at recovery| No Infection      | Total
+-------------|---------------------|-------------------|----------
+Taking ABX   |          6%         |        x%         | 0.06+0.0x 
+No ABX Intake|          4%         |        y%         | 0.04+0.0y
+Total        |         10%         |        90%        |    1  
+
+Odds ratio = (0.06/0.1) / (0.04/0.1) = 1.5
+Since the odds ratio is 1.5, which is higher than 1, the risk of outcome is higher after exposure.
+
+The inclusion criteria would be if the patients took the ABX 3 months before the surgery S.
+
+The exclusion criteria would be how much ABX were taken by these infected patients, whether the infected patients took some other antibiotics 3 months before the surgery, whether these patients infected after the 2 weeks recovery period, etc.
+
+
+(c) Design a retrospective cohort study that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria. 
+
+Ans. 
+When we have already known the result outcomes, we consider back the "risk of factor" in this study.
+
+Participants: All patients that have already been infected after the Surgery S.
+
+Background: The patients who take the antibiotic ABX during the 3 months period before the surgery S may decrease the "good" bacteria amount in their body. This condition may further cause the infection after the surgery S during the recovery period.
+
+Hypothesis: The patients who infected during the recovery period may be caused by the intake of antibiotic ABX during the 3 months period before the surgery S.
+
+We send out surveys to people who infected after the particular surgery S to inquire them if they ingest the ABX 3 months before the surgery.
+
+Result: 60 percent of infected patients answered yes, which means they took the ABX three months before the surgery.
+
+The conclusion could prove that the ABX may possibly influence the infected condition.
+
+The inclusion criteria would be if the patients took the ABX 3 months before the surgery S.
+
+The exclusion criteria would be how much ABX were taken by these infected patients, what time they usually took these ABX antibiotics in a day, whether these infected patients took some other antibiotics 3 months before the surgery, whether they infected after the 2 weeks recovery period, etc.
+
+(d) Design a prospective cohort study that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria.
+
+Ans. 
+When we don't know the result outcomes, we consider things that have already occurred. Then we make the academic hypothesis and logical forecast to the events that will occur later. 
+
+Participants: All patients that took antibiotic ABX in three months and  will take the particular Surgery S
+
+Background: The patients who take the antibiotic ABX during the 3 months period before the surgery S may decrease the "good" bacteria amount in their body. This condition may further cause the infection after the surgery S during the recovery period.
+
+
+Hypothesis: Intake of antibiotic ABX 3 months before the surgery S will cause the infection after the surgery during the recovery period.
+
+We send out surveys to before the particular surgery S to ask patients if they took the ABX in 3 months. We partition patients into two groups, people who took the ABX in 3 months and people who didn't take the ABX in 3 months.
+
+Result: 60 percent of infected patients answered yes, which means they took the ABX three months before the surgery.
+
+The conclusion could prove that the ABX may possibly influence the infected condition during the recovery period after the surgery S.
+
+The inclusion criteria would be if the patients took the ABX 3 months before the surgery S and got infected after the surgery S.
+
+The exclusion criteria would be how much ABX were taken by these infected patients, what time they usually took these ABX antibiotics in a day, whether these infected patients took some other antibiotics 3 months before the surgery, whether they infected after the 2 weeks recovery period, etc.
+
+##### Section 4 : Creating Table 1. 
+Q5) Creating a Table 1: Under Assignments -> Assignment_II, read in the file called "smokedata.csv". The codebook is as follows:
+
+. ID:	Unique numeric identifier     
+. quit:	0= did not quit smoking in previous 12 months, 1= quit smoking in previous 12 months    
+. advice	0= reported ‘did not receive advice from healthcare provider regarding quitting smoking.’, 1= reported ‘did receive advice…’      
+. ill	0= no major illness diagnosed in previous 12 months, 1= major illness diagnosed in previous 12 months     
+. sex	0=male, 1=female      
+. educ	0= less than 12 years, 1= 12 years or more      
+. provtype	0= Physician, 1= Nurse Practitioner     
+. birth_yr	Four digit year of patient’s birth      
+. app_yr	Four digit year of patient’s appointment        
+. age_at_app*	Patient’s age at the appointment.
+
+*For simplicity, we will assume all patients have already had their birthday when they attend their appointment. Therefore, age should equal app_yr – birth_yr.
+
+The objective of the study behind the dataset was to determine the association between of providing smoking cessation advice to patients and whether they quit smoking during the same time period.
+
+Complete the attached Table 1 (Problem6_Table1.docx) and upload it into Canvas (you can upload either .docx or .pdf). Use the space below to show your work.
+
+```{r}
+# Insert code below
+library(formattable)
+d.in3 <- read.csv("smokedata.csv", header = TRUE)
+summary(d.in3)
+# Give the total patients
+d.total <- d.in3 %>%
+  select(id) %>%
+  unique() %>%
+  nrow()
+d.total
+dp <- d.total/d.total
+percent(dp)
+
+d.in3$id <- as.factor(d.in3$id)
+summary(d.in3)
+
+d.in3$quit <- as.factor(d.in3$quit)
+summary(d.in3)
+# The number of quiters
+mean_q <- d.in3 %>%
+  filter(quit == 1) %>%
+  summarise(mean_quit = mean(age_at_appt))
+
+
+mean_q2 <- d.in3 %>%
+  filter(quit == 0) %>%
+  summarise(mean_quit = mean(age_at_appt))
+summary(mean_q2)
+
+
+d.quiters <- d.in3 %>%
+  filter(quit == 1) %>%
+  select(age_at_appt) %>%
+  unique() %>%
+  nrow()
+d.quiters
+summary(d.quiters)
+# The number of nonquiters
+d.nonquiters <- d.in3 %>%
+  filter(quit == 0) %>%
+  select(age_at_appt) %>%
+  unique() %>%
+  nrow()
+d.nonquiters
+summary(d.nonquiters)
+quiters <- with(d.in3, table(quit, age_at_appt))
+print(quiters)
+
+
+cat("Mean age for quiters", mean(d.quiters,age_at_appt), "\n")
+
+
+d.in3$advice <- as.factor(d.in3$advice)
+summary(d.in3)
+
+d.in3$ill <- as.factor(d.in3$ill)
+summary(d.in3)
+
+d.in3$sex <- as.factor(d.in3$sex)
+summary(d.in3)
+
+d.in3$educ <- as.factor(d.in3$educ)
+summary(d.in3)
+
+d.in3$provtype <- as.factor(d.in3$provtype)
+summary(d.in3)
+
+cat("std for case", sd(d.in3$age),"\n")
+age.test <- t.test(d.in3$age)
+print(age.test)
+
+gender.table <- with(d.in3, table(sex))
+gender.table
+
+d.fe_noncreater <- d.in %>%
+  filter(age_at_admit > 70, had_cardiac_arrests == 0) %>%
+  select(patient.ids) %>%
+  unique() %>%
+  nrow()
+d.no_elderthan70
+dp7 <- d.no_elderthan70/d.total
+percent(dp7)
+
+
+
+```
+
+```{r}
+# Insert code below
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(png)
+library(grid)
+
+library(formattable)
+d.in3 <- read.csv("smokedata.csv", header = TRUE)
+summary(d.in3)
+# Give the total patients
+d.total <- d.in3 %>%
+  select(id) %>%
+  unique() %>%
+  nrow()
+d.total
+dp <- d.total/d.total
+percent(dp)
+
+d.in4 <- d.in3 %>%
+  mutate(quit = as.factor(quit),advice = as.factor(advice), ill = as.factor(ill), sex = as.factor(sex),educ = as.factor(educ), provtype = as.factor(provtype))
+
+d.age_at_appt <- d.in4 %>%
+  group_by(quit) %>%
+  summarize(average_age = mean(age_at_appt),sd_Age = sd(age_at_appt))
+head(d.age_at_appt)
+
+
+#Find the P-value for age
+age.test <- t.test(d.in3$age)
+print(age.test)
+
+gender.table <- with(d.in4, table(quit,sex))
+gender.table
+percent(69/(d.total))
+percent(82/(d.total))
+percent(25/(d.total))
+percent(23/(d.total))
+
+ill.table <- with(d.in4, table(quit,ill))
+ill.table
+percent((137+44+4)/(d.total))
+percent((14+4)/(d.total))
+ill.test <- t.test(d.in3$ill)
+print(ill.test)
+
+educ.table <- with(d.in4, table(quit,educ))
+educ.table
+percent(70/(d.total))
+percent(81/(d.total))
+percent(26/(d.total))
+percent(22/(d.total))
+educ.test <- t.test(d.in3$educ)
+print(educ.test)
+
+smoke.table <- with(d.in4, table(quit,advice))
+smoke.table
+percent((129+22)/(d.total))
+percent((22+26+4)/(d.total))
+smoke.test <- t.test(d.in3$advice)
+print(smoke.test)
+
+provider.table <- with(d.in4, table(quit,provtype))
+provider.table
+percent((137+44+4)/(d.total))
+percent((14+4)/(d.total))
+provider.test <- t.test(d.in3$provtype)
+print(provider.test)
+
+```
+

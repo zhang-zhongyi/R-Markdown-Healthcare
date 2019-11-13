@@ -1,0 +1,430 @@
+---
+title: "Applied Analytics Final Project"
+author: "Zhongyi Zhang, Qi'er An, Yuying Gao"
+date: "3/13/2019"
+output: html_document
+---
+
+##Data Cleaning:
+
+```{r setup, include=FALSE}
+rm(list = ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+# "Region" CSV file data cleaning
+d.in<-read.csv("RegionIP2.csv")
+#if(d.in$influenza.deaths == 0){d.in$influenza.deaths <- d.in$influenza.deaths + 1}
+d.in2 <- d.in %>%
+  filter(d.in$influenza.deaths == 0)
+d.in <- filter(d.in, d.in$influenza.deaths != 0)
+d.in2$influenza.deaths <- d.in2$influenza.deaths + 1
+d.in <- rbind(d.in, d.in2)
+d.in <- d.in %>%
+  arrange(region, MMWR)
+rm(data.frame = d.in2)
+#d.in <- d.in%>%
+#  -c(d.in$influenza.deaths == 0)
+#d.in2$influenza.deaths <- d.in2$influenza.deaths + 1
+#d.in$influenza.deaths <- d.in$influenza.deaths + 1
+d.in <- d.in %>%
+  mutate(ratio = pneumonia.deaths/influenza.deaths) 
+#d.in$ratio[d.in$ratio == Inf] <- 1000
+d.in <- d.in %>%
+  mutate(year = floor(MMWR/100))
+d.in <- d.in %>%
+  mutate(week = MMWR - round(MMWR, -2))
+d.in$week[d.in$week == -50] <- 50
+d.in$week[d.in$week == -49] <- 51
+d.in$week[d.in$week == -48] <- 52
+d.in$week[d.in$week == -47] <- 53
+d.in <- d.in %>%
+  mutate(season = week)
+#d.in <- data.frame(A= d.in$season(1:20),B=d.in$season(21:53))
+#d.in$season[d.in$season[0:9]] <- "Winter"
+df.1 <- subset(d.in, season>=9 & season<=21)
+df.2 <- subset(d.in, season>=22 & season<=34)
+df.3 <- subset(d.in, season>=35 & season<=47)
+df.4 <- subset(d.in, season>=48 & season<=53)
+df.5 <- subset(d.in, season>0 & season<=8)
+df.1$season <- "1"
+df.2$season <- "2"
+df.3$season <- "3"
+df.4$season <- "4"
+df.5$season <- "4"
+df.w <- rbind(df.5,df.4)
+df.m <- rbind(df.1,df.2)
+df.n <- rbind(df.3,df.w)
+d.in0 <- rbind(df.m, df.n)
+d.in0 <- d.in0 %>%
+  arrange(region, MMWR)
+rm(data.frame = d.in,df.1,df.2,df.3,df.4,df.5,df.m,df.n,df.w)
+
+# "Age" CSV file data cleaning
+d.out<-read.csv("AgeIP2.csv",header=TRUE)
+d.out2 <- d.out %>%
+  filter(d.out$influenza.deaths ==0)
+d.out <- filter(d.out, d.out$influenza.deaths != 0)
+d.out2$influenza.deaths <- d.out2$influenza.deaths + 1
+d.out <- rbind(d.out, d.out2)
+d.out <- d.out %>%
+  arrange(MMWR, age)
+rm(data.frame = d.out2)
+d.out <- d.out %>%
+  mutate(agegroup = age)
+d.out$agegroup <- as.character(d.out$agegroup)
+d.out$agegroup[d.out$agegroup == "0-17 years"] <- 1
+d.out$agegroup[d.out$agegroup == "18-64 years"] <- 2
+d.out$agegroup[d.out$agegroup == "65 years and older"] <- 3
+d.out <- d.out %>%
+  mutate(ratio = pneumonia.deaths/influenza.deaths) 
+d.out <- d.out %>%
+  mutate(year = floor(MMWR/100))
+d.out <- d.out %>%
+  mutate(week = MMWR - round(MMWR, -2))
+d.out$week[d.out$week == -50] <- 50
+d.out$week[d.out$week == -49] <- 51
+d.out$week[d.out$week == -48] <- 52
+d.out$week[d.out$week == -47] <- 53
+d.out <- d.out %>%
+  mutate(season = week)
+df.6 <- subset(d.out, season>=9 & season<=21)
+df.7 <- subset(d.out, season>=22 & season<=34)
+df.8 <- subset(d.out, season>=35 & season<=47)
+df.9 <- subset(d.out, season>=48 & season<=53)
+df.10 <- subset(d.out, season>0 & season<=8)
+df.6$season <- "1"
+df.7$season <- "2"
+df.8$season <- "3"
+df.9$season <- "4"
+df.10$season <- "4"
+df.o <- rbind(df.10,df.9)
+df.p <- rbind(df.6,df.7)
+df.q <- rbind(df.8,df.o)
+d.out0 <- rbind(df.p, df.q)
+d.out0 <- d.out0 %>%
+  arrange(MMWR, agegroup)
+rm(data.frame = d.out,df.6,df.7,df.8,df.9,df.10,df.o,df.p,df.q)
+
+#We use d.in0 for region chart and d.out0 for age chart
+```
+
+
+```{r}
+###Table 1
+#Organize variable type
+d.in0 <- d.in0 %>%
+  mutate(region = as.factor(region), season = as.factor(season),year = as.factor(year),pneumonia.deaths=as.numeric(pneumonia.deaths))
+
+d.out0 <- d.out0 %>%
+  mutate(agegroup = as.factor(agegroup), season = as.factor(season),year = as.factor(year))
+
+#Calculating totals
+intotalr = sum(d.in0$influenza.deaths)
+intotalr
+pntotalr = sum(d.in0$pneumonia.deaths)
+pntotalr
+
+intotala = sum(d.out0$influenza.deaths)
+intotala
+pntotala = sum(d.out0$pneumonia.deaths)
+pntotala
+
+#count region
+d.table1region <- d.in0 %>%
+  group_by(region) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotalr*100,pnperc = pncount/pntotalr*100)
+
+#count season region chart
+d.table1rseason <- d.in0 %>%
+  group_by(season) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotalr*100,pnperc = pncount/pntotalr*100)
+
+#count year region chart
+d.table1ryear <- d.in0 %>%
+  group_by(year) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotalr*100,pnperc = pncount/pntotalr*100)
+
+
+#count age
+d.table1age <- d.out0 %>%
+  group_by(agegroup) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotala*100,pnperc = pncount/pntotala*100)
+
+#count season age chart
+d.table1aseason <- d.out0 %>%
+  group_by(season) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotala*100,pnperc = pncount/pntotala*100)
+
+#count year age chart
+d.table1ayear <- d.out0 %>%
+  group_by(year) %>%
+  summarize(infcount = sum(influenza.deaths),pncount = sum(pneumonia.deaths))%>%
+  mutate(infperc = infcount/intotalr*100,pnperc = pncount/pntotalr*100)
+
+##week beta and CI
+#week ~ in - age
+m.wi <- lm(d.out0$influenza.deaths ~ d.out0$week)
+summary(m.wi)
+confint(m.wi)
+#week ~ pn - age
+m.wp <- lm(d.out0$pneumonia.deaths ~ d.out0$week)
+summary(m.wp)
+confint(m.wp)
+#week ~ in - region
+m.wi1 <- lm(d.in0$influenza.deaths ~ d.in0$week)
+summary(m.wi1)
+confint(m.wi1)
+#week ~ pn - region
+m.wp2 <- lm(d.in0$pneumonia.deaths ~ d.in0$week)
+summary(m.wp2)
+confint(m.wp2)
+```
+
+
+## Scatterplot:
+
+```{r}
+#Region
+ggplot(d.in0,aes(influenza.deaths,y = pneumonia.deaths, group = region,col = region)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+#Age
+ggplot(d.out0,aes(influenza.deaths,y = pneumonia.deaths, group = agegroup,col = agegroup)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+#Season-Region
+ggplot(d.in0,aes(influenza.deaths,y = pneumonia.deaths, group = season,col = season)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+#Season-Age
+ggplot(d.out0,aes(influenza.deaths,y = pneumonia.deaths, group = season,col = season)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+#Year-region
+ggplot(d.in0,aes(influenza.deaths,y = pneumonia.deaths, group = year,col = year)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+#Year-age
+ggplot(d.out0,aes(influenza.deaths,y = pneumonia.deaths, group = year,col = year)) + geom_point() +labs(x = "death from influenza",y = "death from pneumonia")
+```
+
+## Single regression:
+
+```{r}
+#Ratio ~ region
+m.rr <- lm(ratio ~ region,data = d.in0)
+summary(m.rr)
+plot(m.rr)
+
+pv.rr <- summary(m.rr)$coefficient[,"Pr(>|t|)"]
+names(pv.rr) <- NULL
+pv.rr
+
+ggplot(data = d.in0, aes(x = region, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.in0, aes(x=region, y=ratio))
+ggplot(data = d.in0, aes(x = region, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.in0, aes(x=region, y=ratio))
+eqn.rr <-paste0("ratio = ",round(m.rr$coefficients["region"],3),"region+",round(m.rr$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.rr)$r.squared,3))
+ggplot(data.frame(d.in0$region,d.in0$ratio), aes(x=d.in0$region, y=d.in0$ratio))+geom_point()+ stat_smooth(method=lm) + annotate("text", label=eqn.rr, parse=F,x=8.3,y=750)
+
+```
+
+
+```{r}
+#Ratio ~ season
+m.rs <- lm(ratio ~ season,data = d.in0)
+summary(m.rs)
+plot(m.rs)
+
+pv.rs <- summary(m.rs)$coefficient[,"Pr(>|t|)"]
+names(pv.rs) <- NULL
+pv.rs
+
+ggplot(data = d.in0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.in0, aes(x=season, y=ratio))
+ggplot(data = d.in0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.in0, aes(x=season, y=ratio))
+eqn.rs <-paste0("ratio = ",round(m.rs$coefficients["season"],3),"season+",round(m.rs$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.rs)$r.squared,3))
+ggplot(data.frame(d.in0$season,d.in0$ratio), aes(x=d.in0$season, y=d.in0$ratio)) + geom_point()+stat_smooth(method=lm) + annotate("text", label=eqn.rs, parse=F,x=3.75,y=750)
+# Since rsq is 0.329, ratio and season somewhat show the linear relationship
+
+```
+
+## Multiple regression:
+
+```{r}
+### multiple regression-region
+m.lmregion <- lm(pneumonia.deaths ~ influenza.deaths + region + season + year + week, data = d.in0)
+summary(m.lmregion)
+```
+
+```{r}
+### multiple regression-age
+m.lmage <- lm(pneumonia.deaths ~ influenza.deaths + agegroup + season + year + week, data = d.out0)
+summary(m.lmage)
+```
+
+## Multiple regression on the ratio:
+
+```{r}
+### multiple regression on I - region
+m.r <- lm(ratio ~ region + season + year + week,data = d.in0)
+summary(m.r)
+plot(m.r)
+
+```
+
+```{r}
+### multiple regression on I - age
+m.a <- lm(ratio ~ agegroup + season + year + week,data = d.out0)
+summary(m.a)
+plot(m.a)
+```
+
+### kmeans and clustering:
+
+```{r}
+#k = 2 -- region
+kmeans_in <- kmeans(d.in0,centers=2)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$week, d.in0$ratio,col=kmeans_in$cluster,xlab = "week", ylab ="ratio",main = "k-means plot for $k$ = 2, region chart",pch=20,cex=2)
+points(kmeans_in$centers,col=1:2,pch=3,cex=3,lwd=3)
+
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+```
+
+```{r}
+#k = 3 -- region
+kmeans_in <- kmeans(d.in0,centers=3)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$week, d.in0$ratio,col=kmeans_in$cluster,xlab = "week", ylab ="ratio",main = "k-means plot for $k$ = 3, region chart",pch=20,cex=2)
+points(kmeans_in$centers,col=1:3,pch=3,cex=3,lwd=3)
+
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+```
+
+
+```{r}
+#k = 4 -- region
+kmeans_in <- kmeans(d.in0,centers=4)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$week, d.in0$ratio,col=kmeans_in$cluster,xlab = "week", ylab ="ratio",main = "k-means plot for $k$ = 4, region chart",pch=20,cex=2)
+points(kmeans_in$centers,col=1:4,pch=3,cex=3,lwd=3)
+
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+
+```
+
+```{r}
+#k = 5 -- region
+kmeans_in <- kmeans(d.in0,centers=5)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$week, d.in0$ratio,col=kmeans_in$cluster,xlab = "week", ylab ="ratio",main = "k-means plot for $k$ = 5, region chart",pch=20,cex=2)
+points(kmeans_in$centers,col=1:5,pch=3,cex=3,lwd=3)
+
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+```
+
+```{r}
+#k = 6 -- region
+kmeans_in <- kmeans(d.in0,centers=6)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$week, d.in0$ratio,col=kmeans_in$cluster,xlab = "week", ylab ="ratio",main = "k-means plot for $k$ = 6, region chart",pch=20,cex=2)
+points(kmeans_in$centers,col=1:6,pch=3,cex=3,lwd=3)
+
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+```
+
+
+
+```{r}
+#clean dataset
+d.ou0 <- subset(d.out0,select = -c(age,MMWR,influenza.deaths,pneumonia.deaths))
+
+#k = 2 -- age
+kmeans_ou <- kmeans(d.ou0,centers=2)
+
+names(kmeans_ou)
+kmeans_ou$cluster
+kmeans_ou$centers
+
+plot(d.ou0$week, d.ou0$ratio,col=kmeans_ou$cluster,xlab = "week", ylab ="ratio",pch=20,cex=2,main = "k-means plot for $k$ = 2, age chart")
+points(kmeans_ou$centers,col=1:2,pch=3,cex=3,lwd=3)
+
+print(kmeans_ou$betweenss)
+print(kmeans_ou$tot.withinss)
+
+```
+
+
+```{r}
+#k = 3 -- age
+kmeans_ou <- kmeans(d.ou0,centers=3)
+
+names(kmeans_ou)
+kmeans_ou$cluster
+kmeans_ou$centers
+
+plot(d.ou0$week, d.ou0$ratio,col=kmeans_ou$cluster,xlab = "week", ylab ="ratio",pch=20,cex=2,main = "k-means plot for $k$ = 3, age chart")
+points(kmeans_ou$centers,col=1:3,pch=3,cex=3,lwd=3)
+
+print(kmeans_ou$betweenss)
+print(kmeans_ou$tot.withinss)
+
+```
+
+```{r}
+#k = 4 -- age
+kmeans_ou <- kmeans(d.ou0,centers=4)
+
+names(kmeans_ou)
+kmeans_ou$cluster
+kmeans_ou$centers
+
+plot(d.ou0$week, d.ou0$ratio,col=kmeans_ou$cluster,xlab = "week", ylab ="ratio",pch=20,cex=2,main = "k-means plot for $k$ = 4, age chart")
+points(kmeans_ou$centers,col=1:4,pch=3,cex=3,lwd=3)
+
+print(kmeans_ou$betweenss)
+print(kmeans_ou$tot.withinss)
+
+```
+
+```{r}
+#k = 5 -- age
+kmeans_ou <- kmeans(d.ou0,centers=5)
+
+names(kmeans_ou)
+kmeans_ou$cluster
+kmeans_ou$centers
+
+plot(d.ou0$week, d.ou0$ratio,col=kmeans_ou$cluster,xlab = "week", ylab ="ratio",pch=20,cex=2,main = "k-means plot for $k$ = 5, age chart")
+points(kmeans_ou$centers,col=1:5,pch=3,cex=3,lwd=3)
+
+print(kmeans_ou$betweenss)
+print(kmeans_ou$tot.withinss)
+
+```
+
+```{r}
+#k = 6 -- age
+kmeans_ou <- kmeans(d.ou0,centers=6)
+
+names(kmeans_ou)
+kmeans_ou$cluster
+kmeans_ou$centers
+
+plot(d.ou0$week, d.ou0$ratio,col=kmeans_ou$cluster,xlab = "week", ylab ="ratio",pch=20,cex=2,main = "k-means plot for $k$ = 6, age chart")
+points(kmeans_ou$centers,col=1:6,pch=3,cex=3,lwd=3)
+
+print(kmeans_ou$betweenss)
+print(kmeans_ou$tot.withinss)
+
+```

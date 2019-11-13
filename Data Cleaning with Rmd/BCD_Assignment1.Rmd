@@ -1,0 +1,145 @@
+---
+title: "Assignment I"
+author: ""
+date: "January 15, 2019"
+output: html_document
+---
+
+
+#### Instructions
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+x_int <- c(1, 2, 3)
+x_int
+```
+
+
+> Please submit your answers by 5:59 pm on 01/21/2019
+
+#### Section 1: Probability : Total points 50
+
+
+Q1. Which of the following numbers cannot be probability? Explain why.     
+
+a) -0.0001
+b) 0.05
+c) 3.415
+d) 20%
+e) 1
+
+Ans 1.  The answers are a) -0.0001 and c)3.415. Probability canot be negative numbers since they will be meaningless. Probability cannot over 1. The highest probability is 100%. 341.5% is meaningless.
+
+Q2. A card is drawn randomly from a deck of ordinary playing cards. The game rules are that you win if the card is a spade or an ace. What is the probability that you will win the game?
+
+Ans 2. The probability that I will win the game is 4/13 if the jokers cards are taken out from the ordinary playing cards.52 cards will be the total amount of cards. 4 aces include 1 ace with spade. There are 13 spades in total. (13+4-1)/52 = 4/13 is the probability that I will win the game.
+
+If the jokers cards are included, the probability will be (13+4-1)/54 = 8/27.
+
+Q3. An urban hospital has a 20% mortality rate on average for admitted patients. If on a particular day, 17 patients got admitted, what are:
+
+a) the chances that exactly 7 will survive?
+
+b) the chances that at least 15 patients will survive?    
+
+Ans 3.
+
+The survival rate is 1 - 20% = 80%
+
+P(exactly 7 survive) = C(17,7) * 0.8^7 * 0.2^(17-7) = 19448 * 0.2097152 * 1.024 * 10^(-7) = 0.0004176426199 = 0.041764%
+The chance that exactly 7 will survive is 0.041764%.
+
+P(exactly 15 survive) = C(17,15) * 0.8^15 * 0.2^(17-15) = 0.19140298416 P(exactly 16 survive) = C(17,16) * 0.8^16 * 0.2^(17-16) = 0.09570149208 P(exactly 17 survive) = C(17,17) * 0.8^17 * 0.2^(17-17) = 0.02251799814
+P(at lest 15 survive) = P(exactly 15 survive)+P(exactly 16 survive)+P(exactly 17 survive) = 0.19140298416+0.09570149208+0.02251799814 = 0.3096 = 30.96%
+
+The chance that at least 15 will survive is 30.96%.
+
+
+Q4. Let F and G be two events such that P(F) is 0.4, P(G) is 0.8. F and G are independent events. Fill in the remaining elements of the table.
+
+Table    | $G$ | $\bar{G}$ | Marginal
+---------|-----|-----------|----------
+$F$      |0.32 |   0.08    |  0.40
+$\bar{F}$|0.48 |   0.12    |  0.60
+Marginal |0.80 |   0.20    |    1
+
+
+Q5. Let F and G be two events such that P(F) is 0.2, P(G) is 0.7. Now, the conditional probability P(G|F) is given as 0.4. Fill in the remaining elements of the table.
+
+Table    | $G$ | $\bar{G}$ | Marginal
+---------|-----|-----------|----------
+$F$      |0.08 |    0.12   |    0.20 
+$\bar{F}$|0.62 |    0.18   |    0.80
+Marginal |0.70 |    0.30   |    1
+
+
+Q6. A survey was conducted among 100 patients about smoking status. The following is the sample size split by smoking status (Yes or No) and gender (Male or Female). 
+
+
+Table    | Smoking (Yes) | Smoking(No) | Total
+---------|---------------|-------------|----------
+Male     |      19       |        36   | 55
+Female   |      13       |        32   | 45
+Total    |      32       |        68   | 100 
+
+
+The probability that a randomly selected patient is a male who smokes is 0.19.  
+
+(a) Fill in all the elements of the table
+
+
+(b) What is the probability of a randomly selected patient being a female?    
+ 
+ Ans: P(Female) = 45/100 = 0.45 = 45%
+
+(c) What is the probability of a randomly selected patient being a smoker?     
+
+Ans: P(smoker) = 32/100 = 0.68 = 32%
+
+(d)  What is the probability of a randomly selected smoker being a female?    
+
+Ans: P(female in smokers) = 13/32 = 0.40625 = 40.625%
+
+
+#### Section 2: Data Analysis using R: Total points 25
+
+
+Q1 : Using the dataset provided ("sample_patient_dataset.csv"), the task to build a 2x2 table for the studying the association between age at admission >70 and cardiac arrests. You can either use the sample table given below or build your own. Rememer to output both count and % in the table. Be sure to round the % to the nearest integer (e.g, 0.674 will be 67% and 0.675 will be 68%, see notes in Lecture2 on summary statistics as example). Fill in the code in the shaded areas.
+
+
+Table         | Cardiac Arrests (Yes) | Cardiac Arrests (No) | Total
+--------------|-----------------------|----------------------|----------
+Age > 70 (%)  |                       |                      | 
+Age <= 70 (%) |                       |                      | 
+Total         |                       |                      | 24,107
+
+
+```{r}
+### Insert code here
+rm(list = ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(formattable)
+
+
+#I directly imported the "sample_patient_dataset.csv" to my RStudio by clicking "Import Dataset -> From Text(base)..."(in the Environment box of the top right corner section).
+d.in <- read.csv("sample_patient_dataset.csv",header = TRUE)
+
+d.in <- mutate(d.in, dob = mdy(dob), hosp_admission = mdy(hosp_admission))
+
+```
+
+
+
+Q2: Create your own de-identified version of "patient_dataset.csv". Upload your de-identified dataset onto Canvas and write the de-identification code below. You will need to refer to the document "Deidentification.pdf" (on Canvas, look under files -> lectures -> lecture_2).
+
+### Insert code here
+```{r}
+### Insert code here
+
+
+```

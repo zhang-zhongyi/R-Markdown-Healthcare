@@ -1,0 +1,23 @@
+---
+title: "Class 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a Rmd file
+
+```{r}
+x <- 5
+y <- 6
+z <- 11
+cat("The value of z is", z, "\n")
+```
+```{r}
+x <- 7
+z <- x+y
+cat("The value of z is  now", z, "\n")
+```
+

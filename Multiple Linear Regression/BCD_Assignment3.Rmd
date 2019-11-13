@@ -1,0 +1,420 @@
+---
+title: "Assignment III"
+author: "Troy Zhongyi Zhang"
+date: "February 5, 2019"
+output: html_document
+---
+
+
+> Please submit your answers by 5:59 pm on Feb 11, 2019. Remember to show your work. In other words, always use echo=TRUE for the R code chunks that you provide. NOTE - All plots must show proper title, axis lables, and any legends used. Points will be deducted otherwise.  
+
+
+## Question 1: Simple Linear Regression
+We are going to work with the dataset bike_data.csv (provided in Files->Assignments->Assignment_3). This dataset has been dowloaded from Kaggle, which is an online prediction contest website (see https://www.kaggle.com/c/bike-sharing-demand/data). The data is essentially the log of hourly bike rentals in a city over two years. The following is the codebook:
+
+. datetime - hourly date + timestamp      
+. season -  1 = spring, 2 = summer, 3 = fall, 4 = summer      
+. holiday - whether the day is considered a holiday     
+. workingday - whether the day is neither a weekend nor holiday     
+. weather - 1: Clear, Few clouds, Partly cloudy, Partly cloudy , 2: Mist + Cloudy, Mist + Broken clouds, Mist + Few clouds, Mist , 3: Light Snow, Light Rain + Thunderstorm + Scattered clouds, Light Rain + Scattered clouds , 4: Heavy Rain + Ice Pallets + Thunderstorm + Mist, Snow + Fog        
+. temp - temperature in Celsius         
+. atemp - "feels like" temperature in Celsius       
+. humidity - relative humidity        
+. windspeed - wind speed      .
+. casual - number of non-registered user rentals initiated        
+. registered - number of registered user rentals initiated      
+. count - number of total rentals
+
+
+First, we need to do some preprocessing. Specifically, we need to process the year variable and remove all observations with weather == 4 (these are outliers and need to be be removed). 
+
+
+```{r, echo = FALSE, message = FALSE, warning=FALSE}
+# set up
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(MASS)
+
+# Read the dataset in
+d.in <- read.csv("bike_data.csv", header = TRUE)
+
+# Preprocess
+d.in <- d.in %>% mutate(datetime_f = mdy_hm(datetime)) %>%
+  mutate(year = as.factor(year(datetime_f))) %>%
+  mutate(weather = as.factor(weather)) %>%
+  filter(weather != "4")
+```
+
+(a) Perform the following simple linear regression: count ~ temperature. What are the coefficients and their 95% confidence intervals?        
+Ans. 
+```{r}
+## Insert code below
+plot(count~temp, data= d.in)
+m.tc <- lm(count ~ temp,data = d.in)
+plot(m.tc)
+summary(m.tc)
+coef(m.tc)
+confint(m.tc)
+
+```
+
+(b) Interpret your results in terms of increase or decrease in temperature. Mention specifically what is the  meaning of the intercept and the direction and magnitude of the association between temperature and count. 
+
+Ans.      
+Beta 0 represents the value of Y at X = 0, i.e. when temperature = 0
+Beta 1 represents the average change in Y corresponding to one unit change in X
+A unit increase in x1 is associated with a 9.1720 increase in y
+In other words, an increase in temerature by 1 Celsius degree is associated with an average increase in bike rental count number by 9.1720 units.
+Intercept = 6.008118 means the average bike rental count number at temperature = 0
+
+(c) Using mutate, create a new variable temp_f which is Farenheit representation of values in the temp variable. Perform the regression count ~ temp_f and interpret the results. What conclusions can you draw from this experiment?      
+Ans. 
+```{r}
+## Insert code below
+### F=9C/5+32
+d.in <- d.in %>%
+  mutate(temp_f = ((9*temp/5) + 32))
+#d.in <- mutate(d.in, temp_f=9*temp/5+32)
+m.fc <- lm(count ~ temp_f,data = d.in)
+plot(m.fc)
+summary(m.fc)
+coef(m.fc)
+confint(m.fc)
+
+#To find the rsq and the linear regression fits level
+eqn00 <-paste0("count = ",round(m.fc$coefficients["temp_f"],3),"tempf+", 
+             round(m.fc$coefficients["(Intercept)"],3),"; rsq = ",
+             round(summary(m.fc)$r.squared,3))
+ggplot(data.frame(d.in$temp_f,d.in$count), aes(x=d.in$temp_f, y=d.in$count)) + geom_point()+stat_smooth(method=lm) + 
+  annotate("text", label=eqn00, parse=F,x=5,y=20)
+#Conclusion: A unit increase in x1 is associated with a 5.0956 increase in y
+#In other words, an increase in temperature by 1 degree is associated with an average increase in bike rental count number by 5.0956 units.
+#Intercept = -157.050506 means the average bike rental count number at Fahrenheit temperature = 0
+# the count~temp_f doesn't show a strong simple linear regression since the rsq is only 0.156 (Not very large number)
+#The slope of count~Celsius is more slanted than the slope of count~Farenheit. In conclusion, the slope for count ~ Fahrenheit temperature is more relaxative than the slope of count ~ Celsius temperature since the count~Celsius slope is higher than the count ~ Fahrenheit slope.
+
+```
+
+
+## Question 2: Multiple Linear Regression - I
+On the same datasetas Q1, perform the following multiple linear regression: count ~ temp + season + humidity + weather + year. Keep season and weather as categorical variables. Interpret your results through the following means :
+
+(a) what is the intercept and what does it mean? 
+Ans. 
+```{r}
+## Insert code below
+d.in <- d.in %>% mutate(datetime_f = mdy_hm(datetime)) %>%
+  mutate(year = as.factor(year(datetime_f))) %>%
+  mutate(weather = as.factor(weather)) %>%
+  filter(weather != "4")
+
+d.in <- d.in %>%
+  mutate(season = as.factor(season), weather = as.factor(weather))
+
+m2.lm <- lm(count ~ temp + season + humidity + weather + year, data = d.in)
+summary(m2.lm)
+coef(m2.lm)[1]
+
+coef(m2.lm)[2]
+coef(m2.lm)[4]
+coef(m2.lm)[6]
+coef(m2.lm)[7]
+coef(m2.lm)[8]
+coef(m2.lm)[9]
+
+coef(m2.lm)[3]
+coef(m2.lm)[5]
+
+#Intercept =  98.49594 means the average number of bike rental count number of 98.49594 at temp = 0, season = 1 (Spring), humidity = 0, weather = 1 (Clear, Few clouds, Partly cloudy, Partly cloudy ), year = 2011)
+
+```
+
+
+(b) how does each variable contribute to count in terms of increase or decrease?   
+
+Ans.
+Holding all other variables constant, an increase in the proportion of temperature by one Celsius degree increases the bike rental count number by 10.43201 units.
+
+Holding all other variables constant, an increase in the proportion of humidity level by one unit decreases the bike rental count number by 2.733076 units.
+
+Holding all other variables constant, the bike rental count number will increase 4.71765 units in season 2 (Summer) compared with season 1 (Spring).
+
+Holding all other variables constant, the bike rental count number will decrease 29.10223 units in season 3 (Fall) compared with season 1 (Spring).
+
+Holding all other variables constant, the bike rental count number will increase 66.98554 units in season 4 (Winter) compared with season 1 (Spring).
+
+Holding all other variables constant, the bike rental count number will increase 11.34183 units during weather 2 (Mist + Cloudy, Mist + Broken clouds, Mist + Few clouds, Mist) compared with the weather 1 (Clear, Few clouds, Partly cloudy, Partly cloudy).
+
+Holding all other variables constant, the bike rental count number will decrease 7.376353 units during weather 3 (Light Snow, Light Rain + Thunderstorm + Scattered clouds, Light Rain + Scattered clouds) compared with the weather 1 (Clear, Few clouds, Partly cloudy, Partly cloudy).
+
+Holding all other variables constant, the bike rental count number will increase 75.87791 units in the year 2012 compared with 2011.
+
+(c) what can you say about the results and the quality of fit? Use pvalue threshold of < 0.001 to reject any null hypothesis.     
+Ans.
+```{r}
+
+#Calculate the rsq to find the quality of fit
+eqn0 <-paste0("count = ",round(m2.lm$coefficients["temp"],3),"temp+", 
+             round(m2.lm$coefficients["(Intercept)"],3),"; rsq = ",
+             round(summary(m2.lm)$r.squared,3))
+
+ggplot(data.frame(d.in$temp,d.in$count), aes(x=d.in$temp, y=d.in$count)) + geom_point()+stat_smooth(method=lm) + 
+  annotate("text", label=eqn0, parse=F,x=25,y=20)
+
+
+pval0 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][1]
+names(pval0) <- NULL
+pval0
+
+pval1 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][2]
+names(pval1) <- NULL
+pval1
+
+pval2 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][3]
+names(pval2) <- NULL
+pval2
+
+pval3 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][4]
+names(pval3) <- NULL
+pval3
+
+pval4 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][5]
+names(pval4) <- NULL
+pval4
+
+pval5 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][6]
+names(pval5) <- NULL
+pval5
+
+pval6 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][7]
+names(pval6) <- NULL
+pval6
+
+pval7 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][8]
+names(pval7) <- NULL
+pval7
+
+pval8 <- summary(m2.lm)$coefficient[,"Pr(>|t|)"][9]
+names(pval8) <- NULL
+pval8
+
+
+
+```
+H0: beta = 0
+HA: beta != 0
+rsq = 0.306 for count ~ temp. It means that the plot somewhat fits the linear regression model, but not very fitted.
+
+p-value:
+[1] 8.832744e-41
+[1] 1.199917e-235 < 0.001 - temp
+[1] 0.367988 > 0.001 - season 2
+[1] 1.213178e-05 < 0.001 - season 3
+[1] 5.754115e-52 < 0.001 -season 4
+[1] 2.765601e-212 < 0.001 - humidity
+[1] 0.001148089 > 0.001 - weather 2
+[1] 0.2024225 > 0.001 - weather 3
+[1] 2.041084e-147 < 0.001 - year 2012
+Our p-values for the count ~ temp, season 3, season 4, humidity, and year 2012 are far below our 0.001 threshold; so we reject the null hypothesis. In other words, the data in our sample favor HA over H0. We conclude that there is a statistically significant relationship between "temp, season 3, season 4, humidity, year2012" and "count".
+
+## Question 3: Multiple Linear Regression - II
+This question deals within application of linear regression. Download the dataset titled "sales_advertising.csv" from Files -> Assignments -> Assignment_3. The dataset measure sales of a product as a function of advertising budgets for TV, radio, and newspaper media. The following is the data dictionary.    
+
+(1) TV: advertising budget for TV (in thousands of dollars)  
+(2) radio: advertisin g budget for radio (in thousands of dollars)  
+(3) newspaper:  advertising budget for newspaper (in thousands of dollars)  
+(4) sales: sales of product (in thousands of units)   
+
+(a) Plot the response (sales) against all three predictors in three separate plots. Write your code below. Do any of the plots show a linear trend?      
+Ans.
+```{r}
+## Insert code below
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(MASS)
+
+# Read the dataset in
+d.in2 <- read.csv("sales_advertising.csv", header = TRUE)
+
+
+plot(Sales~TV, data=d.in2)
+plot(Sales~Radio, data = d.in2)
+plot(Sales~Newspaper, data = d.in2)
+
+ggplot(data = d.in2, aes(x = TV, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',data = d.in2, aes(x=TV, y=Sales))
+
+ggplot(data = d.in2, aes(x = TV, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',method = 'lm',data = d.in2, aes(x=TV, y=Sales))
+
+ggplot(data = d.in2, aes(x = Radio, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',data = d.in2, aes(x=Radio, y=Sales))
+
+ggplot(data = d.in2, aes(x = Radio, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',method = 'lm',data = d.in2, aes(x=Radio, y=Sales))
+
+ggplot(data = d.in2, aes(x = Newspaper, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',data = d.in2, aes(x=Newspaper, y=Sales))
+
+ggplot(data = d.in2, aes(x = Newspaper, y = Sales)) + 
+  geom_point(color='blue') +
+  geom_smooth(color='red',method = 'lm',data = d.in2, aes(x=Newspaper, y=Sales))
+
+m.lm33 <- lm(Sales ~ Newspaper,data = d.in2)
+
+eqn2 <-paste0("Sales = ",round(m.lm33$coefficients["Newspaper"],3),"News+", 
+             round(m.lm33$coefficients["(Intercept)"],3),"; rsq = ",
+             round(summary(m.lm33)$r.squared,3))
+ggplot(data.frame(d.in2$Newspaper,d.in2$Sales), aes(x=d.in2$Newspaper, y=d.in2$Sales)) + geom_point()+stat_smooth(method=lm) + 
+  annotate("text", label=eqn2, parse=F,x=80,y=20)
+
+# I would say the "Sales ~ TV" and the "Sales ~ Radio" plots show a linear trend, but the the "Sales ~ Newspaper" plot doesn't show a linear trend since the rsq for Sales~Newspaper is only 0.052, which is too small to show a "linear" regression trend.
+
+```
+
+
+(b) Perform a simple regression to model sales ~ TV. Write your code below. What is the observed association between sales and TV? What is the null hypothesis for this particular model? From the regression, what can we say about the null hypothesis? Use a p-value threshold of <0.05 to indicate significance.        
+Ans. 
+```{r}
+# Insert code
+
+m.lm31 <- lm(Sales ~ TV,data = d.in2)
+
+plot(m.lm31)
+summary(m.lm31)
+coef(m.lm31)
+confint(m.lm31)
+
+pvala <- summary(m.lm31)$coefficient[,"Pr(>|t|)"]
+names(pvala) <- NULL
+pvala
+
+
+eqn1 <-paste0("Sales = ",round(m.lm31$coefficients["TV"],3),"TV + ", 
+             round(m.lm31$coefficients["(Intercept)"],3),"; rsq = ",
+             round(summary(m.lm31)$r.squared,3))
+ggplot(data.frame(d.in2$TV,d.in2$Sales), aes(x=d.in2$TV, y=d.in2$Sales)) + geom_point()+stat_smooth(method=lm) + 
+  annotate("text", label=eqn1, parse=F,x=200,y=20)
+
+# Observation: An increase in the advertising budget of TV (in thousands of dollars) by 1 unit is associated with the increase in sales (in thousands of units) by 0.047537
+
+# An increase in the advertising budget of TV $1,000 is associated with the increase in sales (in thousands of units) by 47.537 units
+
+```
+Ans.
+H0: beta = 0, The sales and TV don't have any relationships.
+HA: beta != 0, The sales and TV may have some relationships.
+
+rsq = 0.612 means the plot fits the linear regression model pretty well.
+p-value = 1.46739e-42 < 0.05
+Our p-value for the estimated coefficient is far below our 0.05 threshold; so we reject the null hypothesis. In other words, the data in our sample favor HA over H0. We conclude that there is a statistically significant relationship between "TV" and "Sales".
+
+(c) Perform a simple regression to model sales ~ newspaper. Write your code below. What is the observed association between sales and newspaper? What is the null hypothesis for this particular model? From the regression, what can we say about the null hypothesis? Use a p-value threshold of <0.05 to indicate significance.        
+Ans.
+```{r}
+# Insert code
+
+
+m.lm33 <- lm(Sales ~ Newspaper,data = d.in2)
+
+plot(m.lm33)
+summary(m.lm33)
+coef(m.lm33)
+confint(m.lm33)
+
+pvalb <- summary(m.lm33)$coefficient[,"Pr(>|t|)"]
+names(pvalb) <- NULL
+pvalb
+
+
+eqn2 <-paste0("Sales = ",round(m.lm33$coefficients["Newspaper"],3),"News+", 
+             round(m.lm33$coefficients["(Intercept)"],3),"; rsq = ",
+             round(summary(m.lm33)$r.squared,3))
+ggplot(data.frame(d.in2$Newspaper,d.in2$Sales), aes(x=d.in2$Newspaper, y=d.in2$Sales)) + geom_point()+stat_smooth(method=lm) + 
+  annotate("text", label=eqn2, parse=F,x=80,y=20)
+
+#Observation: An increase in the advertising budget of Newspaper (in thousands of dollars) by 1 unit is associated with the increase in sales (in thousands of units) by 0.05469
+
+#An increase in the advertising budget of Newspaper by $1,000 is associated with the increase in sales by 54.69 units
+```
+
+Ans.
+H0: beta = 0, The sales and Newspaper don't have any relationships.
+HA: beta != 0, The sales and Newspaper may have some relationships.
+
+rsq = 0.052 means that the plot doesn't fit the linear regression model.
+p-value = 0.001148 < 0.05
+Our p-value for the estimated coefficient is far below our 0.05 threshold; so we reject the null hypothesis. In other words, the data in our sample favor HA over H0. We conclude that there is a statistically significant relationship between "Newspaper" and "Sales".
+
+(d)  Perform a multiple linear regression to model sales ~ TV + radio + newspaper.      
+Ans.
+```{r}
+# Insert code
+
+m.lm34 <- lm(Sales ~ TV + Radio + Newspaper, data = d.in2)
+summary(m.lm34)
+
+coef(m.lm34)[1]
+coef(m.lm34)[2]
+coef(m.lm34)[3]
+coef(m.lm34)[4]
+
+pval11 <- summary(m.lm34)$coefficient[,"Pr(>|t|)"][1]
+names(pval11) <- NULL
+pval11
+
+pval12 <- summary(m.lm34)$coefficient[,"Pr(>|t|)"][2]
+names(pval12) <- NULL
+pval12
+
+pval13 <- summary(m.lm34)$coefficient[,"Pr(>|t|)"][3]
+names(pval13) <- NULL
+pval13
+
+pval14 <- summary(m.lm34)$coefficient[,"Pr(>|t|)"][4]
+names(pval14) <- NULL
+pval14
+
+```
+i.  What are the observed associations between sales and each of the media budgets? Mention which associations are significant. Use a p-value threshold of <0.05 to indicate significance.      
+
+Ans. 
+The associations of sales ~ TV and Radio are stronger than the association of Sales ~ Newspaper. Sales ~ TV and Sales ~ Radio have both positive slopes, but the Sales~Newspaper has a negative slope. 
+
+Holding all other variables constant, an increase in advertising budget of TV (in thousands of dollars) by 1 unit increases the Sales (in thousands of units) by 0.045765.
+An increase in advertising budget of Radio (in thousands of dollars) by 1 unit increases the Sales  (in thousands of units) by 0.188530. 
+An increase in advertising budget of Newspaper (in thousands of dollars) by 1 unit decreases the Sales (in thousands of units) by 0.001037.
+
+Holding all other variables constant, an increase in advertising budget of TV by $1,000 increases the Sales by 45.765 units.
+An increase in advertising budget of Radio by $1,000 increases the Sales by 188.530 units. 
+An increase in advertising budget of Newspaper by $1,000 decreases the Sales by 1.037 units.
+
+H0: beta = 0, 
+HA: beta != 0
+The p-value for TV, Radio, and Newspaper are 
+[1] 1.50996e-81 <0.05 -TV
+[1] 1.505339e-54 <0.05 -Radio
+[1] 0.8599151 > 0.05 - Newspaper
+The p-values for TV and Radio are far below 0.05. We need to reject the null hypothesis for TV and Radio. TV and Radio have a statistically significant relationship with Sales.
+However, the p-value of Sales~Newspaper (0.8599151 > 0.05) is far greater than 0.05. The null hypothesis is accepted. There is no relationship between Sales and Newspaper.
+
+ii. Do you observe any difference in the associations in the multiple regression model vs. the simple regression model? Explain why or why not.     
+Ans. 
+```{r}
+# Take an overlook of Sales~Radio simple regression
+m.lm32 <- lm(Sales ~ Radio,data = d.in2)
+summary(m.lm32)
+
+```
+Observations: The slope difference between the single regression and multiple regression of "Sales~TV and Sales~Radio" is very tiny. However, the slope of "Sales~Newspaper" changes from positive(single regression) to negative(multiple regression). The change in the Newspaper starts to show an inverse proportion with the change in Sales. The p-value for Newspaper is above 0.05, which we can accept the null hypothesis. There is no or very tiny relationship between Newspaper and Sales in multiple linear regression, but the Newspaper and Sales have a statistically significant relationship in a single regression. By making an academic guess, there are more variables (TV and Radio) can influence Sales. The TV and Radio could make larger influences on Sales. The Newspaper can only make tiny effects, and it is unstable. We can conclude that there is no relationship between Sales and the Newspaper in multiple linear regression.

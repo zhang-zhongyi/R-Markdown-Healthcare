@@ -1,0 +1,424 @@
+---
+title: "Applied Analytics Final Project"
+author: "Troy"
+date: "3/13/2019"
+output: html_document
+---
+
+## R Markdown Data Cleaning:
+
+```{r setup, include=FALSE}
+rm(list = ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+# "Region" CSV file data cleaning
+d.in<-read.csv("~/Desktop/RegionIP2.csv",header=TRUE)
+#if(d.in$influenza.deaths == 0){d.in$influenza.deaths <- d.in$influenza.deaths + 1}
+d.in2 <- d.in %>%
+  filter(d.in$influenza.deaths ==0)
+d.in <- filter(d.in, d.in$influenza.deaths != 0)
+d.in2$influenza.deaths <- d.in2$influenza.deaths + 1
+d.in <- rbind(d.in, d.in2)
+d.in <- d.in %>%
+  arrange(region, MMWR)
+rm(data.frame = d.in2)
+#d.in <- d.in%>%
+#  -c(d.in$influenza.deaths == 0)
+#d.in2$influenza.deaths <- d.in2$influenza.deaths + 1
+#d.in$influenza.deaths <- d.in$influenza.deaths + 1
+d.in <- d.in %>%
+  mutate(ratio = pneumonia.deaths/influenza.deaths) 
+#d.in$ratio[d.in$ratio == Inf] <- 1000
+d.in <- d.in %>%
+  mutate(year = floor(MMWR/100))
+d.in <- d.in %>%
+  mutate(week = MMWR - round(MMWR, -2))
+d.in$week[d.in$week == -50] <- 50
+d.in$week[d.in$week == -49] <- 51
+d.in$week[d.in$week == -48] <- 52
+d.in$week[d.in$week == -47] <- 53
+d.in <- d.in %>%
+  mutate(season = week)
+#d.in <- data.frame(A= d.in$season(1:20),B=d.in$season(21:53))
+#d.in$season[d.in$season[0:9]] <- "Winter"
+df.1 <- subset(d.in, season>=9 & season<=21)
+df.2 <- subset(d.in, season>=22 & season<=34)
+df.3 <- subset(d.in, season>=35 & season<=47)
+df.4 <- subset(d.in, season>=48 & season<=53)
+df.5 <- subset(d.in, season>0 & season<=8)
+df.1$season <- "1"
+df.2$season <- "2"
+df.3$season <- "3"
+df.4$season <- "4"
+df.5$season <- "4"
+df.w <- rbind(df.5,df.4)
+df.m <- rbind(df.1,df.2)
+df.n <- rbind(df.3,df.w)
+d.in0 <- rbind(df.m, df.n)
+d.in0 <- d.in0 %>%
+  arrange(region, MMWR)
+rm(data.frame = d.in,df.1,df.2,df.3,df.4,df.5,df.m,df.n,df.w)
+
+# "Age" CSV file data cleaning
+d.out<-read.csv("~/Desktop/AgeIP2.csv",header=TRUE)
+d.out2 <- d.out %>%
+  filter(d.out$influenza.deaths ==0)
+d.out <- filter(d.out, d.out$influenza.deaths != 0)
+d.out2$influenza.deaths <- d.out2$influenza.deaths + 1
+d.out <- rbind(d.out, d.out2)
+d.out <- d.out %>%
+  arrange(MMWR, age)
+rm(data.frame = d.out2)
+d.out <- d.out %>%
+  mutate(agegroup = age)
+d.out$agegroup <- as.character(d.out$agegroup)
+d.out$agegroup[d.out$agegroup == "0-17 years"] <- 1
+d.out$agegroup[d.out$agegroup == "18-64 years"] <- 2
+d.out$agegroup[d.out$agegroup == "65 years and older"] <- 3
+d.out <- d.out %>%
+  mutate(ratio = pneumonia.deaths/influenza.deaths) 
+d.out <- d.out %>%
+  mutate(year = floor(MMWR/100))
+d.out <- d.out %>%
+  mutate(week = MMWR - round(MMWR, -2))
+d.out$week[d.out$week == -50] <- 50
+d.out$week[d.out$week == -49] <- 51
+d.out$week[d.out$week == -48] <- 52
+d.out$week[d.out$week == -47] <- 53
+d.out <- d.out %>%
+  mutate(season = week)
+df.6 <- subset(d.out, season>=9 & season<=21)
+df.7 <- subset(d.out, season>=22 & season<=34)
+df.8 <- subset(d.out, season>=35 & season<=47)
+df.9 <- subset(d.out, season>=48 & season<=53)
+df.10 <- subset(d.out, season>0 & season<=8)
+df.6$season <- "1"
+df.7$season <- "2"
+df.8$season <- "3"
+df.9$season <- "4"
+df.10$season <- "4"
+df.o <- rbind(df.10,df.9)
+df.p <- rbind(df.6,df.7)
+df.q <- rbind(df.8,df.o)
+d.out0 <- rbind(df.p, df.q)
+d.out0 <- d.out0 %>%
+  arrange(MMWR, agegroup)
+rm(data.frame = d.out,df.6,df.7,df.8,df.9,df.10,df.o,df.p,df.q)
+
+```
+
+## R Markdown Data Analysis for Region CSV file
+
+```{r}
+m.rr <- lm(ratio ~ region,data = d.in0)
+summary(m.rr)
+plot(m.rr)
+
+pv.rr <- summary(m.rr)$coefficient[,"Pr(>|t|)"]
+names(pv.rr) <- NULL
+pv.rr
+
+ggplot(data = d.in0, aes(x = region, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.in0, aes(x=region, y=ratio))
+ggplot(data = d.in0, aes(x = region, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.in0, aes(x=region, y=ratio))
+eqn.rr <-paste0("ratio = ",round(m.rr$coefficients["region"],3),"region+",round(m.rr$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.rr)$r.squared,3))
+ggplot(data.frame(d.in0$region,d.in0$ratio), aes(x=d.in0$region, y=d.in0$ratio))+geom_point()+ stat_smooth(method=lm) + annotate("text", label=eqn.rr, parse=F,x=8.3,y=750)
+# Since rsq is only 0.016, ratio and region don't show a strong linear relationship
+
+```
+Interpretation:
+In simple regression between ratio and region,
+H0: beta = 0, 
+HA: beta != 0
+The p-value for ratio and region is
+6.494317e-11
+The p-value for ratio and region is far below 0.05. We need to reject the null hypothesis for ratio and region. Region have a statistically significant relationship with ratio.
+
+```{r}
+m.rs <- lm(ratio ~ season,data = d.in0)
+summary(m.rs)
+plot(m.rs)
+
+pv.rs <- summary(m.rs)$coefficient[,"Pr(>|t|)"]
+names(pv.rs) <- NULL
+pv.rs
+
+ggplot(data = d.in0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.in0, aes(x=season, y=ratio))
+ggplot(data = d.in0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.in0, aes(x=season, y=ratio))
+eqn.rs <-paste0("ratio = ",round(m.rs$coefficients["season"],3),"season+",round(m.rs$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.rs)$r.squared,3))
+ggplot(data.frame(d.in0$season,d.in0$ratio), aes(x=d.in0$season, y=d.in0$ratio)) + geom_point()+stat_smooth(method=lm) + annotate("text", label=eqn.rs, parse=F,x=3.75,y=750)
+# Since rsq is 0.329, ratio and season somewhat show the linear relationship
+
+```
+Interpretation:
+In simple regression between ratio and seaon,
+H0: beta = 0, 
+HA: beta != 0
+The p-values for ratio vs. season2 (Summer), season3 (Autumn), and season4 (Winter) are 
+1.764008e-133  
+2.343433e-97
+0.03465084e
+The p-values for ratio vs. Summer and Autumn are far below 0.05. We need to reject the null hypothesis for ratio versus Summer and Autumn. Summer and Autumn have a statistically significant relationship with ratio.
+
+The p-value for ratio vs. Winter is a little bit below 0.05. We somewhat need to reject the null hypothesis for ratio versus Winter. Winter have a some relationship with ratio.
+
+```{r}
+m.ry <- lm(ratio ~ year,data = d.in0)
+summary(m.ry)
+plot(m.ry)
+
+pv.ry <- summary(m.ry)$coefficient[,"Pr(>|t|)"]
+names(pv.ry) <- NULL
+pv.ry
+
+ggplot(data = d.in0, aes(x = year, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.in0, aes(x=year, y=ratio))
+ggplot(data = d.in0, aes(x = year, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.in0, aes(x=year, y=ratio))
+eqn.ry <-paste0("ratio = ",round(m.ry$coefficients["year"],3),"year+",round(m.ry$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.ry)$r.squared,3))
+print(round(m.ry$coefficients["year"],3))
+print(round(m.ry$coefficients["(Intercept)"],3))
+print(round(summary(m.ry)$r.squared,3))
+ggplot(data.frame(d.in0$year,d.in0$ratio), aes(x=d.in0$year,y=d.in0$ratio))+geom_point()+ stat_smooth(method=lm)+annotate("text", label=eqn.ry, parse=F,x=2014.97:2015, y=750)
+# Since rsq is only 0.027, ratio and year don't show a strong linear relationship
+
+```
+Interpretation:
+In simple regression between ratio and year,
+H0: beta = 0, 
+HA: beta != 0
+The p-value for ratio vs. year is 
+1.851161e-17
+The p-value for ratio vs. year is far below 0.05. We need to reject the null hypothesis for ratio versus year. Year have a statistically significant relationship with ratio.
+
+```{r}
+m.rmul <- lm(ratio ~ region+season+year,data = d.in0)
+summary(m.rmul)
+plot(m.rmul)
+
+pv.rmul0 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][0]
+names(pv.rmul0) <- NULL
+pv.rmul0
+
+pv.rmul1 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][1]
+names(pv.rmul1) <- NULL
+pv.rmul1
+
+pv.rmul2 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][2]
+names(pv.rmul2) <- NULL
+pv.rmul2
+
+pv.rmul3 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][3]
+names(pv.rmul3) <- NULL
+pv.rmul3
+
+pv.rmul4 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][4]
+names(pv.rmul4) <- NULL
+pv.rmul4
+
+pv.rmul5 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][5]
+names(pv.rmul5) <- NULL
+pv.rmul5
+
+pv.rmul6 <- summary(m.rmul)$coefficient[,"Pr(>|t|)"][6]
+names(pv.rmul6) <- NULL
+pv.rmul6
+
+```
+Interpretation:
+In multiple regression,
+H0: beta = 0, 
+HA: beta != 0
+The p-values for ratio vs. region, season2 (Summer), season3 (Autumn), season4 (Winter), and year are
+[1] 5.345523e-16
+[1] 2.444018e-140
+[1] 1.638485e-102
+[1] 0.07373112
+[1] 5.16276e-21
+The p-values for ratio vs. region, Summer, Autumn, and year are far below 0.05. We need to reject the null hypothesis for ratio versus region, Summer, Autumn, and year. Region, Summer, Autumn, and year have a statistically significant relationship with ratio in multiple regression.
+
+The p-value for ratio vs. Winter is above 0.05. We need to accept the null hypothesis for ratio versus Winter. Winter doesn't have any relationship with ratio in multiple regression.
+
+## R Markdown Data Analysis for Age CSV file
+
+```{r}
+
+m.rs2 <- lm(ratio ~ season,data = d.out0)
+summary(m.rs2)
+plot(m.rs2)
+
+pv.rs2 <- summary(m.rs2)$coefficient[,"Pr(>|t|)"]
+names(pv.rs2) <- NULL
+pv.rs2
+
+ggplot(data = d.out0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.out0, aes(x=season, y=ratio))
+ggplot(data = d.out0, aes(x = season, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.out0, aes(x=season, y=ratio))
+eqn.rs2 <-paste0("ratio = ",round(m.rs2$coefficients["season"],3),"season+",round(m.rs2$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.rs2)$r.squared,3))
+ggplot(data.frame(d.out0$season,d.out0$ratio), aes(x=d.out0$season, y=d.out0$ratio)) + geom_point()+stat_smooth(method=lm) + annotate("text", label=eqn.rs2, parse=F,x=3.75,y=750)
+
+```
+
+
+```{r}
+
+m.ra2 <- lm(ratio ~ agegroup,data = d.out0)
+summary(m.ra2)
+plot(m.ra2)
+
+pv.ra2 <- summary(m.ra2)$coefficient[,"Pr(>|t|)"]
+names(pv.ra2) <- NULL
+pv.ra2
+
+ggplot(data = d.out0, aes(x = agegroup, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.out0, aes(x=agegroup, y=ratio))
+ggplot(data = d.out0, aes(x = agegroup, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.out0, aes(x=agegroup, y=ratio))
+eqn.ra2 <-paste0("ratio = ",round(m.ra2$coefficients["agegroup"],3),"agegroup+",round(m.ra2$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.ra2)$r.squared,3))
+ggplot(data.frame(d.out0$agegroup,d.out0$ratio), aes(x=d.out0$agegroup, y=d.out0$ratio)) + geom_point()+stat_smooth(method=lm) + annotate("text", label=eqn.ra2, parse=F,x=2.9,y=750)
+
+```
+
+
+
+```{r}
+
+m.ry2 <- lm(ratio ~ year,data = d.out0)
+summary(m.ry2)
+plot(m.ry2)
+
+pv.ry2 <- summary(m.ry2)$coefficient[,"Pr(>|t|)"]
+names(pv.ry2) <- NULL
+pv.ry2
+
+ggplot(data = d.out0, aes(x = year, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',data = d.out0, aes(x=year, y=ratio))
+ggplot(data = d.out0, aes(x = year, y = ratio))+geom_point(color='blue')+geom_smooth(color='red',method = 'lm',data = d.out0, aes(x=year, y=ratio))
+eqn.ry2 <-paste0("ratio = ",round(m.ry2$coefficients["year"],3),"year+",round(m.ry2$coefficients["(Intercept)"],3),"; rsq = ",round(summary(m.ry2)$r.squared,3))
+ggplot(data.frame(d.out0$year,d.out0$ratio), aes(x=d.out0$year, y=d.out0$ratio)) + geom_point()+stat_smooth(method=lm) + annotate("text", label=eqn.ry2, parse=F,x=2014.97:2015,y=750)
+
+```
+
+
+```{r}
+m.ram <- lm(ratio ~season+agegroup+year,data = d.out0)
+summary(m.ram)
+plot(m.ram)
+
+pv.ram0 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][0]
+names(pv.ram0) <- NULL
+pv.ram0
+
+pv.ram1 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][1]
+names(pv.ram1) <- NULL
+pv.ram1
+
+pv.ram2 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][2]
+names(pv.ram2) <- NULL
+pv.ram2
+
+pv.ram3 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][3]
+names(pv.ram3) <- NULL
+pv.ram3
+
+pv.ram4 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][4]
+names(pv.ram4) <- NULL
+pv.ram4
+
+pv.ram5 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][5]
+names(pv.ram5) <- NULL
+pv.ram5
+
+pv.ram6 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][6]
+names(pv.ram6) <- NULL
+pv.ram6
+
+pv.ram7 <- summary(m.ram)$coefficient[,"Pr(>|t|)"][7]
+names(pv.ram7) <- NULL
+pv.ram7
+
+```
+
+```{r}
+
+
+```
+
+
+## Predictions
+
+You can also embed plots, for example:
+
+```{r}
+library(plyr)
+library(dplyr)
+library(pROC)
+library(caret)
+library(MASS)
+
+set.seed(10000)
+train_index <- createDataPartition(d.in0$ratio, p = .8, list = FALSE, times = 1)
+head(train_index)
+d.train <- d.in0[train_index,]
+head(d.train)
+d.test <- d.in0[-train_index,]
+summary((d.train$ratio))
+summary((d.test$ratio))
+d.train$ratio <- d.train$ratio / 1000
+m.log <- glm(ratio~., data = d.train, family = "binomial")
+d.test$pred_ratio <- predict.glm(m.log, newdata = d.test, type = "response")
+m.log
+pred <- roc(response = d.test$ratio, predictor = d.test$pred_ratio, direction = "<")
+# Get AUC performance
+auc_perf <- auc(pred)
+cat("AUC: ", auc_perf, "\n")
+
+# Get 95% CI
+ci_auc_perf <- ci.auc(pred)
+cat("95% CI: ", ci_auc_perf, "\n")
+auc <- cat("AUC: ", auc_perf, "\n")
+# Cannot find AUC
+```
+
+```{r}
+kmeans_in <- kmeans(d.in0,centers=5)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$region, d.in0$ratio,col=kmeans_in$cluster,xlab = "region", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=5)
+points(kmeans_in$centers,col=1:3,pch=3,cex=3,lwd=3)
+
+KMeans_in <- kmeans(d.in0,centers=5)
+plot(d.in0$region, d.in0$ratio,col=kmeans_in$cluster,xlab = "region", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=2)
+points(kmeans_in$centers,pch=3,cex=4,lwd=3, col="blue")
+```
+
+```{r}
+kmeans_in <- kmeans(d.in0,centers=3)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$season, d.in0$ratio,col=kmeans_in$cluster,xlab = "season", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=2)
+points(kmeans_in$centers,col=1:3,pch=3,cex=3,lwd=3)
+
+KMeans_in <- kmeans(d.in0,centers=3)
+plot(d.in0$season, d.in0$ratio,col=kmeans_in$cluster,xlab = "season", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=2)
+points(kmeans_in$centers,pch=3,cex=4,lwd=3, col="purple")
+```
+```{r}
+kmeans_in <- kmeans(d.in0,centers=4)
+names(kmeans_in)
+kmeans_in$cluster
+kmeans_in$centers
+plot(d.in0$year, d.in0$ratio,col=kmeans_in$cluster,xlab = "year", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=2)
+points(kmeans_in$centers,col=1:4,pch=3,cex=3,lwd=3)
+
+KMeans_in <- kmeans(d.in0,centers=4)
+plot(d.in0$year, d.in0$ratio,col=kmeans_in$cluster,xlab = "year", ylab ="ratio",main = "k-means plot for $k$ = 3",pch=19,cex=2)
+points(kmeans_in$centers,pch=3,cex=4,lwd=3, col="purple")
+print(kmeans_in$betweenss)
+print(kmeans_in$tot.withinss)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+

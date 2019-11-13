@@ -1,0 +1,147 @@
+---
+title: "Assignment II "
+author: "Yuying Gao"
+date: "January 28, 2019"
+output: html_document
+---
+
+> Please submit your answers by 5.59 pm Monday February 4, 2019.  Remember to show your work. In other words, always use echo=TRUE for the R code chunks that you provide. NOTE - All plots must show proper title, axis lables, and any legends used. Points will be deducted otherwise. Submissions must be made in HTML. Problem 6 has an additional submission to be made in DOCX or PDF format. 
+
+##### Initialization
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Use this space to call any libraries here
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+
+```
+
+##### Section 1: Plotting
+Q1) In Lecture 3, we worked with two datasets: "case_patients.csv" and "control_patients.csv" (under Files -> lectures -> lecture_3). We will use those files again in this question. 
+
+
+a) Plot a box plot of LOS ~ outcome for the whole cohort. You will have to combine case and control into a single dataset with the outcome for this purpose (as shown in the lecture notes). Write down any observations.
+
+Ans. 
+```{r}
+# Insert code below
+d.0 <- read.csv("~/Desktop/HW2/case_patients.csv", header = TRUE)
+d.1 <- read.csv("~/Desktop/HW2/control_patients.csv", header = TRUE)
+d.0 <- d.0 %>%
+mutate(outcome = rep('0', nrow(d.0)))
+d.1 <- d.1 %>%
+mutate(outcome = rep('1', nrow(d.1)))
+d.in <- rbind(d.0, d.1)
+d.in$outcome <- as.factor(d.in$outcome)
+boxplot(los~outcome, data = d.in, xlab = "outcome", ylab = "los", ylim = c(0, 200))
+
+```
+
+b) Plot a box plot of LOS ~ gender for the two groups in separate graphs. Write down any observations. 
+
+Ans. 
+```{r}
+# Insert code below
+boxplot(los~gender, main = "case_patients.csv Graph", data = d.0, xlab = "Gender", ylab = "los", ylim = c(0, 150))
+boxplot(los~gender, main = "control_patients.csv Graph", data = d.1, xlab = "Gender", ylab = "los", ylim = c(0, 150))
+# My Observation: Compared with two Graphs, the "control_patients.csv Graph" in both female and male parts have samller IQR and more outliers.
+```
+
+
+##### Section 2: Odds and odds ratios calculation
+Q2) In a case-cohort study of 2000 patients studying renal disease caused by smoking, a group found the following numbers.   
+1. A total of 300 patients suffered renal disease  
+2. A total of 1000 patients were smokers  
+3. Two-thirds of the patients who suffered renal disease smoked.  
+
+
+(a) Identify the primary exposure and outcome of interest.  
+
+Ans. 
+The primary exposure is smoking and the outcome of interest is renal disease.
+
+(b) Complete the below 2x2 table of exposure (on row) against outcome (on column).  
+
+Ans.
+
+Table        | Renal Disease | No Renal Disease | Total
+-------------|---------|-----------|--------------------
+Smoking      |   200   |    800    | 1000
+Not Smoking  |   100   |    900    | 1000
+Total        |   300   |    1700   | 2000    
+
+(c) Calculate the odds ratio of incidence of renal disease among smokers.
+
+Ans. 
+Odds = 200/100 = 2
+
+Q3) Answer the following:   
+
+(a) Suppose that an individual has a 18% chance of defaulting on their credit card payment. What are the odds that this individual will default?    
+
+Ans. 
+Odds = 18%/(1-18%) = 0.18/0.82 = 9/41 = 0.2195
+
+(b) On average, what fraction of people with an odds of 0.4 of defaulting on their credit card payment will actually default?  
+
+Ans.
+0.4 = p/(1-p)
+p = 0.4/1.4 = 2/7 = 0.2857
+
+##### Section 3: Study design
+
+Q4) A hospital H noticed that approximately 10% of patients who underwent a particularly surgery (surgery S) also developed infection during their post-surgery recovery period. For surgery S, the post-surgery recovery period is 2 weeks. It is suspected a majority of these patients (about 60%) may have taken a particular antibiotic (ABX) during a 3-month period prior to the surgery. ABX could kill the "good" bacteria in the patients body causing the patient to be prone to infection after the surgery.  
+
+(a) What is the outcome of interest and the exposure of interest in this study?  
+
+Ans.  
+
+(b) Design a matched case-control study (matched on age and gender) that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria.
+
+Ans. 
+
+(c) Design a retrospective cohort study that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria. 
+
+Ans. 
+
+(d) Design a prospective cohort study that will allow a researcher to test this hypothesis. Identify inclusion and exclusion criteria.
+
+Ans. 
+
+
+##### Section 4 : Creating Table 1. 
+Q5) Creating a Table 1: Under Assignments -> Assignment_II, read in the file called "smokedata.csv". The codebook is as follows:
+
+. ID:	Unique numeric identifier     
+. quit:	0= did not quit smoking in previous 12 months, 1= quit smoking in previous 12 months    
+. advice	0= reported ???did not receive advice from healthcare provider regarding quitting smoking.???, 1= reported ???did receive advice??????      
+. ill	0= no major illness diagnosed in previous 12 months, 1= major illness diagnosed in previous 12 months     
+. sex	0=male, 1=female      
+. educ	0= less than 12 years, 1= 12 years or more      
+. provtype	0= Physician, 1= Nurse Practitioner     
+. birth_yr	Four digit year of patient???s birth      
+. app_yr	Four digit year of patient???s appointment        
+. age_at_app*	Patient???s age at the appointment.
+
+*For simplicity, we will assume all patients have already had their birthday when they attend their appointment. Therefore, age should equal app_yr ??? birth_yr.
+
+The objective of the study behind the dataset was to determine the association between of providing smoking cessation advice to patients and whether they quit smoking during the same time period.
+
+Complete the attached Table 1 (Problem6_Table1.docx) and upload it into Canvas (you can upload either .docx or .pdf). Use the space below to show your work.
+
+```{r}
+# Insert code below
+rm(list=ls())
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(grid)
+d.in <- read.csv("~/Desktop/HW2/smokedata.csv", header = TRUE)
+quantile(d.in$age_at_appt)
+
+```
+```{r}
+
+
+```
